@@ -46,4 +46,21 @@ api.interceptors.response.use(
     }
 );
 
+// Helper function to create authenticated request config
+export const createAuthenticatedRequest = async (getToken) => {
+    try {
+        const token = await getToken();
+        return {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("Error creating authenticated request:", error);
+        throw error;
+    }
+};
+
+export { api };
 export default api;

@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Listings from "./pages/Listings";
 import ListingDetail from "./pages/ListingDetail";
 import CreateListing from "./pages/CreateListing";
+import EditListing from "./pages/EditListing";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
@@ -24,6 +25,14 @@ function App() {
                     element={
                         <SignedIn>
                             <CreateListing />
+                        </SignedIn>
+                    }
+                />
+                <Route
+                    path="/edit-listing/:id"
+                    element={
+                        <SignedIn>
+                            <EditListing />
                         </SignedIn>
                     }
                 />
