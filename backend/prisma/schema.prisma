@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,43 +8,37 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
+  id        String    @id @default(cuid())
+  clerkId   String    @unique
+  email     String    @unique
   firstName String?
   lastName  String?
   phone     String?
   avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  listings Listing[]
-  bookings Booking[]
-  reviews  Review[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+  listings  Listing[]
+  reviews   Review[]
 
   @@map("users")
 }
 
 model Listing {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   description String
-  price       Decimal  @db.Decimal(10, 2)
+  price       Decimal   @db.Decimal(10, 2)
   category    String
   location    String
-  images      String[] // Array of image URLs
-  available   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Owner relation
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
-  // Relations
-  bookings Booking[]
-  reviews  Review[]
+  images      String[]
+  available   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  ownerId     String
+  bookings    Booking[]
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reviews     Review[]
 
   @@map("listings")
 }
@@ -61,30 +52,25 @@ model Booking {
   message   String?
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
-
-  // Relations
   userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing   Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("bookings")
 }
 
 model Review {
   id        String   @id @default(cuid())
-  rating    Int      @db.SmallInt // 1-5 stars
+  rating    Int      @db.SmallInt
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
   userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Ensure one review per user per listing
   @@unique([userId, listingId])
   @@map("reviews")
 }
