@@ -11,6 +11,16 @@ const prisma = new PrismaClient();
 router.post(
     "/upload-images",
     requireAuth,
+    (req, res, next) => {
+        // Set a timeout for the upload request
+        req.setTimeout(60000, () => {
+            res.status(408).json({
+                error: "Upload timeout. Please try again with smaller images.",
+                code: "UPLOAD_TIMEOUT",
+            });
+        });
+        next();
+    },
     upload.array("images", 5),
     async (req, res) => {
         try {
@@ -28,7 +38,34 @@ router.post(
             });
         } catch (error) {
             console.error("Error uploading images:", error);
-            res.status(500).json({ error: "Failed to upload images" });
+
+            // Check if this is a Cloudinary configuration error
+            if (
+                error.message.includes("Must supply cloud_name") ||
+                error.message.includes("Must supply api_key") ||
+                error.message.includes("Must supply api_secret")
+            ) {
+                return res.status(500).json({
+                    error: "Image upload service not configured. Please add listings without images or contact support.",
+                    code: "CLOUDINARY_NOT_CONFIGURED",
+                });
+            }
+
+            // Check for timeout or network errors
+            if (
+                error.code === "ETIMEDOUT" ||
+                error.message.includes("timeout")
+            ) {
+                return res.status(408).json({
+                    error: "Upload timeout. Please try again with smaller images.",
+                    code: "UPLOAD_TIMEOUT",
+                });
+            }
+
+            res.status(500).json({
+                error: "Failed to upload images. You can create the listing without images and add them later.",
+                details: error.message,
+            });
         }
     }
 );
@@ -109,25 +146,13 @@ router.get("/", async (req, res) => {
 // Get current user's listings (protected route) - MOVED BEFORE /:id TO AVOID CONFLICT
 router.get("/user/me", requireAuth, async (req, res) => {
     try {
-        const userClerkId = req.auth.userId;
-        console.log("Fetching listings for user:", userClerkId);
+        const userId = req.auth.userId; // This is now the database user ID
+        console.log("Fetching listings for user:", userId);
 
-        // Find the user by clerkId
-        const user = await prisma.user.findUnique({
-            where: { clerkId: userClerkId },
-        });
-
-        if (!user) {
-            console.log("User not found in database");
-            return res.json({ listings: [] });
-        }
-
-        console.log("Found user:", user.id);
-
-        // Get user's listings
+        // Get user's listings directly using the database user ID
         const listings = await prisma.listing.findMany({
             where: {
-                ownerId: user.id,
+                ownerId: userId,
             },
             include: {
                 owner: {
@@ -256,19 +281,12 @@ router.post("/", requireAuth, async (req, res) => {
 
         // Find or create user
         let user = await prisma.user.findUnique({
-            where: { clerkId: req.auth.userId },
+            where: { id: req.auth.userId },
         });
 
         if (!user) {
-            console.log("Creating new user for:", req.auth.userId);
-            user = await prisma.user.create({
-                data: {
-                    clerkId: req.auth.userId,
-                    email: `user-${req.auth.userId}@example.com`,
-                    firstName: "User",
-                    lastName: "User",
-                },
-            });
+            console.log("User not found for ID:", req.auth.userId);
+            return res.status(401).json({ error: "User not found" });
         }
 
         console.log("Using user:", user.id);
@@ -392,7 +410,7 @@ router.put(
             }
 
             // Check ownership
-            if (existingListing.owner.clerkId !== userId) {
+            if (existingListing.ownerId !== userId) {
                 return res.status(403).json({
                     error: "You can only edit your own listings",
                 });
@@ -469,12 +487,9 @@ router.delete("/:id", requireAuth, async (req, res) => {
         // Check if listing exists and user owns it
         const existingListing = await prisma.listing.findUnique({
             where: { id: listingId },
-            include: {
-                owner: {
-                    select: {
-                        clerkId: true,
-                    },
-                },
+            select: {
+                id: true,
+                ownerId: true,
             },
         });
 
@@ -485,7 +500,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
         }
 
         // Check ownership
-        if (existingListing.owner.clerkId !== userId) {
+        if (existingListing.ownerId !== userId) {
             return res.status(403).json({
                 error: "You can only delete your own listings",
             });

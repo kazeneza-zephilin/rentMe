@@ -10,8 +10,25 @@ router.post(
     express.raw({ type: "application/json" }),
     async (req, res) => {
         try {
-            // In production, verify webhook signature
-            console.log("Clerk webhook received");
+            const body = JSON.parse(req.body.toString());
+            const { type, data } = body;
+
+            console.log("Clerk webhook received:", type);
+
+            switch (type) {
+                case "user.created":
+                    await handleUserCreated(data);
+                    break;
+                case "user.updated":
+                    await handleUserUpdated(data);
+                    break;
+                case "user.deleted":
+                    await handleUserDeleted(data);
+                    break;
+                default:
+                    console.log("Unhandled webhook type:", type);
+            }
+
             res.status(200).json({ received: true });
         } catch (error) {
             console.error("Webhook error:", error);

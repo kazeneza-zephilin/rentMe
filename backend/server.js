@@ -17,6 +17,8 @@ const listingRoutes = require("./routes/listings");
 const bookingRoutes = require("./routes/bookings");
 const reviewRoutes = require("./routes/reviews");
 const adminRoutes = require("./routes/admin");
+const chatRoutes = require("./routes/chat");
+const { router: notificationRoutes } = require("./routes/notifications");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,6 +59,8 @@ app.use("/api/listings", listingRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -101,6 +105,22 @@ process.on("SIGTERM", async () => {
     console.log("Shutting down gracefully...");
     await prisma.$disconnect();
     process.exit(0);
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+    // Don't exit the process for unhandled rejections in development
+    if (process.env.NODE_ENV === "production") {
+        process.exit(1);
+    }
+});
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    // Exit the process for uncaught exceptions as they can leave the app in an undefined state
+    process.exit(1);
 });
 
 app.listen(PORT, () => {

@@ -8,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  clerkId   String    @unique
-  email     String    @unique
-  firstName String?
-  lastName  String?
-  phone     String?
-  avatar    String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  bookings  Booking[]
-  listings  Listing[]
-  reviews   Review[]
+  id            String         @id @default(cuid())
+  clerkId       String         @unique
+  email         String         @unique
+  firstName     String?
+  lastName      String?
+  phone         String?
+  avatar        String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]
+  listings      Listing[]
+  reviews       Review[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -56,8 +57,32 @@ model Booking {
   listingId String
   listing   Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat      Chat?
 
   @@map("bookings")
+}
+
+model Chat {
+  id        String    @id @default(cuid())
+  bookingId String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  sender    String
+  userId    String
+  createdAt DateTime @default(now())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }
 
 model Review {
@@ -80,4 +105,18 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // 'chat_message', 'booking_confirmed', 'booking_cancelled', etc.
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  userId    String   // User who receives the notification
+  relatedId String?  // ID of related entity (booking, chat, etc.)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
