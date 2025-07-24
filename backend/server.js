@@ -16,6 +16,7 @@ const userRoutes = require("./routes/users");
 const listingRoutes = require("./routes/listings");
 const bookingRoutes = require("./routes/bookings");
 const reviewRoutes = require("./routes/reviews");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +56,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

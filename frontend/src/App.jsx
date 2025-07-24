@@ -9,69 +9,84 @@ import EditListing from "./pages/EditListing";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
+import AdminRoutes from "./pages/AdminRoutes";
 
 function App() {
     return (
-        <Layout>
-            <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/listings" element={<Listings />} />
-                <Route path="/listings/:id" element={<ListingDetail />} />
+        <Routes>
+            {/* Admin routes - separate from main layout */}
+            <Route path="/admin/*" element={<AdminRoutes />} />
 
-                {/* Protected routes */}
-                <Route
-                    path="/create-listing"
-                    element={
-                        <SignedIn>
-                            <CreateListing />
-                        </SignedIn>
-                    }
-                />
-                <Route
-                    path="/edit-listing/:id"
-                    element={
-                        <SignedIn>
-                            <EditListing />
-                        </SignedIn>
-                    }
-                />
-                <Route
-                    path="/profile"
-                    element={
-                        <SignedIn>
-                            <Profile />
-                        </SignedIn>
-                    }
-                />
-                <Route
-                    path="/dashboard"
-                    element={
-                        <SignedIn>
-                            <Dashboard />
-                        </SignedIn>
-                    }
-                />
-                <Route
-                    path="/bookings"
-                    element={
-                        <SignedIn>
-                            <Bookings />
-                        </SignedIn>
-                    }
-                />
+            {/* Main app routes with layout */}
+            <Route
+                path="*"
+                element={
+                    <Layout>
+                        <Routes>
+                            {/* Public routes */}
+                            <Route path="/" element={<Home />} />
+                            <Route path="/listings" element={<Listings />} />
+                            <Route
+                                path="/listings/:id"
+                                element={<ListingDetail />}
+                            />
 
-                {/* Catch all route for unauthenticated users trying to access protected routes */}
-                <Route
-                    path="/protected/*"
-                    element={
-                        <SignedOut>
-                            <RedirectToSignIn />
-                        </SignedOut>
-                    }
-                />
-            </Routes>
-        </Layout>
+                            {/* Protected routes */}
+                            <Route
+                                path="/create-listing"
+                                element={
+                                    <SignedIn>
+                                        <CreateListing />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/edit-listing/:id"
+                                element={
+                                    <SignedIn>
+                                        <EditListing />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/profile"
+                                element={
+                                    <SignedIn>
+                                        <Profile />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <SignedIn>
+                                        <Dashboard />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/bookings"
+                                element={
+                                    <SignedIn>
+                                        <Bookings />
+                                    </SignedIn>
+                                }
+                            />
+
+                            {/* Catch all route for unauthenticated users trying to access protected routes */}
+                            <Route
+                                path="/protected/*"
+                                element={
+                                    <SignedOut>
+                                        <RedirectToSignIn />
+                                    </SignedOut>
+                                }
+                            />
+                        </Routes>
+                    </Layout>
+                }
+            />
+        </Routes>
     );
 }
 
