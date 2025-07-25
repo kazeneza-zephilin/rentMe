@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Calendar, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 const ChatDetail = () => {
@@ -79,6 +79,11 @@ const ChatDetail = () => {
     const handleRefresh = () => {
         console.log("Manual refresh triggered");
         queryClient.invalidateQueries(["chat", chatId]);
+    };
+
+    const handleBookListing = () => {
+        // Navigate to listing detail page with booking auto-open
+        navigate(`/listings/${chat.listing.id}?book=true`);
     };
 
     if (isLoading) {
@@ -167,22 +172,22 @@ const ChatDetail = () => {
                                         "/placeholder-image.jpg"
                                     }
                                     alt={chat.listing.title}
-                                    className="w-20 h-20 object-cover rounded-lg"
+                                    className="w-24 h-24 object-cover rounded-lg"
                                 />
                             </div>
 
                             {/* Listing & User Info */}
                             <div className="flex-1">
                                 <div className="flex items-start justify-between">
-                                    <div>
+                                    <div className="flex-1">
                                         <h1 className="text-xl font-bold">
                                             {chat.listing.title}
                                         </h1>
-                                        <p className="text-gray-600 mb-2">
+                                        <p className="text-gray-600 mb-2 text-sm line-clamp-2">
                                             {chat.listing.description}
                                         </p>
-                                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                                            <span className="font-semibold text-green-600">
+                                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                                            <span className="font-semibold text-green-600 text-lg">
                                                 ${chat.listing.price}/day
                                             </span>
                                             <span>
@@ -192,14 +197,57 @@ const ChatDetail = () => {
                                                 {chat.listing.category}
                                             </Badge>
                                         </div>
+
+                                        {/* CTA Buttons - Book Now for renters, View Details for owners */}
+                                        {!isOwner ? (
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={handleBookListing}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-all duration-200 hover:shadow-xl"
+                                                    size="sm"
+                                                >
+                                                    <Calendar className="h-4 w-4 mr-2" />
+                                                    Book Now
+                                                </Button>
+                                                <Button
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/listings/${chat.listing.id}`
+                                                        )
+                                                    }
+                                                    variant="outline"
+                                                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                    size="sm"
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/listings/${chat.listing.id}`
+                                                        )
+                                                    }
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="text-right">
+                                    <div className="text-right ml-4">
                                         <Badge
                                             variant={
-                                                isOwner
-                                                    ? "default"
-                                                    : "secondary"
+                                                isOwner ? "default" : "blue"
+                                            }
+                                            className={
+                                                !isOwner
+                                                    ? "bg-blue-100 text-blue-800 border-blue-200"
+                                                    : ""
                                             }
                                         >
                                             {isOwner
@@ -222,54 +270,116 @@ const ChatDetail = () => {
             </div>
 
             {/* Chat Messages */}
-            <Card className="h-96 flex flex-col">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">
+            <Card className="flex flex-col" style={{ height: "500px" }}>
+                <CardHeader className="pb-3 flex-shrink-0">
+                    <CardTitle className="text-lg flex items-center">
+                        <MessageCircle className="h-5 w-5 mr-2" />
                         Conversation with {otherUser.firstName}
                     </CardTitle>
                 </CardHeader>
 
-                <CardContent className="flex-1 flex flex-col p-4">
-                    {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+                <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+                    {/* Messages Area with improved scrolling */}
+                    <div
+                        className="flex-1 overflow-y-auto px-4 py-2 space-y-3 scroll-smooth"
+                        style={{
+                            maxHeight: "400px",
+                            scrollBehavior: "smooth",
+                        }}
+                    >
                         {chat.messages.length === 0 ? (
                             <div className="text-center text-gray-500 py-8">
+                                <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                                 <p>No messages yet. Start the conversation!</p>
                             </div>
                         ) : (
-                            chat.messages.map((message) => {
+                            chat.messages.map((message, index) => {
                                 const isCurrentUser = message.userId === userId;
+                                const previousMessage =
+                                    chat.messages[index - 1];
+                                const showDate =
+                                    !previousMessage ||
+                                    new Date(
+                                        message.createdAt
+                                    ).toDateString() !==
+                                        new Date(
+                                            previousMessage.createdAt
+                                        ).toDateString();
+
                                 return (
-                                    <div
-                                        key={message.id}
-                                        className={`flex ${
-                                            isCurrentUser
-                                                ? "justify-end"
-                                                : "justify-start"
-                                        }`}
-                                    >
+                                    <div key={message.id}>
+                                        {/* Date separator */}
+                                        {showDate && (
+                                            <div className="text-center my-4">
+                                                <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
+                                                    {format(
+                                                        new Date(
+                                                            message.createdAt
+                                                        ),
+                                                        "MMMM d, yyyy"
+                                                    )}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Message bubble */}
                                         <div
-                                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                            className={`flex ${
                                                 isCurrentUser
-                                                    ? "bg-blue-500 text-white"
-                                                    : "bg-gray-100 text-gray-900"
-                                            }`}
+                                                    ? "justify-end"
+                                                    : "justify-start"
+                                            } mb-2`}
                                         >
-                                            <p className="text-sm">
-                                                {message.content}
-                                            </p>
-                                            <p
-                                                className={`text-xs mt-1 ${
+                                            <div
+                                                className={`relative max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
                                                     isCurrentUser
-                                                        ? "text-blue-100"
-                                                        : "text-gray-500"
+                                                        ? "bg-blue-500 text-white rounded-br-md"
+                                                        : "bg-white text-gray-900 border border-gray-200 rounded-bl-md"
                                                 }`}
                                             >
-                                                {format(
-                                                    new Date(message.createdAt),
-                                                    "MMM d, h:mm a"
-                                                )}
-                                            </p>
+                                                {/* Message content */}
+                                                <p className="text-sm leading-relaxed break-words">
+                                                    {message.content}
+                                                </p>
+
+                                                {/* Timestamp */}
+                                                <div
+                                                    className={`flex items-center justify-end mt-1 ${
+                                                        isCurrentUser
+                                                            ? "text-blue-100"
+                                                            : "text-gray-500"
+                                                    }`}
+                                                >
+                                                    <span className="text-xs">
+                                                        {format(
+                                                            new Date(
+                                                                message.createdAt
+                                                            ),
+                                                            "h:mm a"
+                                                        )}
+                                                    </span>
+                                                    {/* Delivery indicator for sent messages */}
+                                                    {isCurrentUser && (
+                                                        <span className="ml-1 text-xs">
+                                                            ✓
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Message tail */}
+                                                <div
+                                                    className={`absolute bottom-0 w-0 h-0 ${
+                                                        isCurrentUser
+                                                            ? "right-0 border-l-8 border-l-blue-500 border-b-8 border-b-transparent"
+                                                            : "left-0 border-r-8 border-r-white border-b-8 border-b-transparent"
+                                                    }`}
+                                                    style={{
+                                                        transform: isCurrentUser
+                                                            ? "translateX(0px) translateY(8px)"
+                                                            : "translateX(0px) translateY(8px)",
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -279,25 +389,35 @@ const ChatDetail = () => {
                     </div>
 
                     {/* Message Input */}
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <Input
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder={`Message ${otherUser.firstName}...`}
-                            className="flex-1"
-                        />
-                        <Button
-                            type="submit"
-                            disabled={
-                                !newMessage.trim() ||
-                                sendMessageMutation.isLoading
-                            }
+                    <div className="flex-shrink-0 p-4 border-t bg-gray-50">
+                        <form
+                            onSubmit={handleSendMessage}
+                            className="flex gap-3"
                         >
-                            {sendMessageMutation.isLoading
-                                ? "Sending..."
-                                : "Send"}
-                        </Button>
-                    </form>
+                            <Input
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder={`Message ${otherUser.firstName}...`}
+                                className="flex-1 rounded-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                maxLength={500}
+                            />
+                            <Button
+                                type="submit"
+                                disabled={
+                                    !newMessage.trim() ||
+                                    sendMessageMutation.isLoading
+                                }
+                                className="rounded-full bg-blue-500 hover:bg-blue-600 text-white px-6"
+                            >
+                                {sendMessageMutation.isLoading ? "..." : "Send"}
+                            </Button>
+                        </form>
+
+                        {/* Character counter */}
+                        <div className="text-xs text-gray-500 mt-1 text-right">
+                            {newMessage.length}/500
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
