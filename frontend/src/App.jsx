@@ -10,6 +10,8 @@ import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
 import Chat from "./pages/Chat";
+import Chats from "./pages/Chats";
+import ChatDetail from "./pages/ChatDetail";
 import AdminRoutes from "./pages/AdminRoutes";
 
 function App() {
@@ -70,6 +72,22 @@ function App() {
                                 element={
                                     <SignedIn>
                                         <Bookings />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/chats"
+                                element={
+                                    <SignedIn>
+                                        <Chats />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/chats/:chatId"
+                                element={
+                                    <SignedIn>
+                                        <ChatDetail />
                                     </SignedIn>
                                 }
                             />

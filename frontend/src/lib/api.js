@@ -18,17 +18,21 @@ export const useApi = () => {
     api.interceptors.request.use(
         async (config) => {
             try {
+                console.log("Getting Clerk token...");
                 const token = await getToken();
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
+                    console.log(
+                        "Using Clerk token:",
+                        token.substring(0, 50) + "..."
+                    );
                 } else {
-                    // Fallback to mock token for development (zephilin)
-                    config.headers.Authorization = `Bearer mock-token-cmdhi4wuv00004092tyn8cb5f`;
+                    console.warn("No Clerk token available");
+                    // Don't add any fallback - let it fail properly for unauthenticated users
                 }
             } catch (error) {
                 console.error("Error getting auth token:", error);
-                // Fallback to mock token for development (zephilin)
-                config.headers.Authorization = `Bearer mock-token-cmdhi4wuv00004092tyn8cb5f`;
+                // Don't add any fallback - let it fail properly for authentication errors
             }
             return config;
         },
@@ -42,11 +46,29 @@ export const useApi = () => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log("API Response:", {
+            url: response.config.url,
+            method: response.config.method,
+            status: response.status,
+            data: response.data,
+        });
+        return response;
+    },
     (error) => {
         const message =
             error.response?.data?.error || error.message || "An error occurred";
-        console.error("API Error:", message);
+
+        console.error("API Error Details:", {
+            url: error.config?.url,
+            method: error.config?.method,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            message: message,
+            data: error.response?.data,
+            headers: error.response?.headers,
+        });
+
         return Promise.reject({ ...error, message });
     }
 );

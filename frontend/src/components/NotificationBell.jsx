@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Check, MessageCircle, Calendar, Star } from "lucide-react";
 import { notificationsApi } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 
 const NotificationBell = () => {
     const { getToken } = useAuth();
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -45,6 +47,53 @@ const NotificationBell = () => {
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Handle notification click
+    const handleNotificationClick = async (notification) => {
+        // Mark as read first
+        if (!notification.read) {
+            await markAsRead(notification.id);
+        }
+
+        // Close dropdown
+        setIsOpen(false);
+
+        // Navigate based on notification type
+        try {
+            if (notification.type === "chat_message") {
+                // Parse metadata to get chatId
+                let metadata = {};
+                try {
+                    metadata = notification.metadata
+                        ? JSON.parse(notification.metadata)
+                        : {};
+                } catch (e) {
+                    console.warn("Failed to parse notification metadata:", e);
+                }
+
+                // Navigate to the specific chat using chatId from metadata or relatedId
+                const chatId = metadata.chatId || notification.relatedId;
+                if (chatId) {
+                    console.log("Navigating to chat:", chatId);
+                    navigate(`/chats/${chatId}`);
+                } else {
+                    console.error(
+                        "No chatId found in notification:",
+                        notification
+                    );
+                    alert("Unable to open chat - missing chat ID");
+                }
+            } else if (notification.type === "booking_status") {
+                // Navigate to bookings page
+                navigate("/bookings");
+            } else if (notification.relatedId) {
+                // Default navigation for other types
+                navigate(`/bookings`);
+            }
+        } catch (error) {
+            console.error("Error handling notification click:", error);
         }
     };
 
@@ -174,11 +223,9 @@ const NotificationBell = () => {
                                 className={`flex items-start space-x-3 p-3 cursor-pointer ${
                                     !notification.read ? "bg-blue-50" : ""
                                 }`}
-                                onClick={() => {
-                                    if (!notification.read) {
-                                        markAsRead(notification.id);
-                                    }
-                                }}
+                                onClick={() =>
+                                    handleNotificationClick(notification)
+                                }
                             >
                                 <div className="flex-shrink-0 mt-1">
                                     {getNotificationIcon(notification.type)}

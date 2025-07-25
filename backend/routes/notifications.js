@@ -87,13 +87,14 @@ router.patch("/mark-all-read", requireAuth, async (req, res) => {
     }
 });
 
-// Helper function to create a notification
+// Helper function to create notifications
 const createNotification = async (
     userId,
     type,
     title,
     message,
-    relatedId = null
+    relatedId,
+    metadata = {}
 ) => {
     try {
         const notification = await prisma.notification.create({
@@ -103,6 +104,7 @@ const createNotification = async (
                 title,
                 message,
                 relatedId,
+                metadata: JSON.stringify(metadata), // Store additional data
             },
         });
         return notification;

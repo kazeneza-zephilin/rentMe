@@ -7,7 +7,16 @@ import {
     useUser,
 } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, Search, Plus, User, Calendar } from "lucide-react";
+import {
+    Menu,
+    X,
+    Home,
+    Search,
+    Plus,
+    User,
+    Calendar,
+    MessageCircle,
+} from "lucide-react";
 import NotificationBell from "./NotificationBell";
 
 const Header = () => {
@@ -23,6 +32,7 @@ const Header = () => {
         { name: "Create Listing", href: "/create-listing", icon: Plus },
         { name: "Dashboard", href: "/dashboard", icon: User },
         { name: "My Bookings", href: "/bookings", icon: Calendar },
+        { name: "Chats", href: "/chats", icon: MessageCircle },
     ];
 
     return (
