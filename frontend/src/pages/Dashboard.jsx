@@ -35,6 +35,7 @@ const Dashboard = () => {
         activeBookings: 0,
         totalEarnings: 0,
         recentListings: [],
+        bookingRequests: [],
         analytics: {
             totalViews: 0,
             averagePrice: 0,
@@ -118,11 +119,55 @@ const Dashboard = () => {
             // Get recent listings (last 5)
             const recentListings = listings.slice(0, 5);
 
+            // Fetch booking requests for all user's listings
+            const listingIds = listings.map((l) => l.id);
+            let bookingRequests = [];
+            let actualActiveBookings = 0;
+            let actualTotalEarnings = 0;
+
+            if (listingIds.length > 0) {
+                try {
+                    // Fetch bookings for each listing
+                    const bookingPromises = listingIds.map((listingId) =>
+                        api.get(`/bookings/listing/${listingId}`, authConfig)
+                    );
+
+                    const bookingResponses = await Promise.all(bookingPromises);
+
+                    // Flatten all bookings
+                    const allBookings = bookingResponses.flatMap(
+                        (response) => response.data.bookings || []
+                    );
+
+                    // Filter pending requests
+                    bookingRequests = allBookings
+                        .filter((booking) => booking.status === "PENDING")
+                        .slice(0, 5); // Show latest 5 requests
+
+                    // Calculate active bookings and earnings
+                    actualActiveBookings = allBookings.filter(
+                        (booking) => booking.status === "CONFIRMED"
+                    ).length;
+
+                    actualTotalEarnings = allBookings
+                        .filter((booking) => booking.status === "COMPLETED")
+                        .reduce(
+                            (sum, booking) =>
+                                sum + parseFloat(booking.totalCost),
+                            0
+                        );
+                } catch (bookingError) {
+                    console.error("Error fetching bookings:", bookingError);
+                    // Continue without bookings if there's an error
+                }
+            }
+
             setDashboardData({
                 myListings,
-                activeBookings,
-                totalEarnings,
+                activeBookings: actualActiveBookings,
+                totalEarnings: actualTotalEarnings,
                 recentListings,
+                bookingRequests,
                 analytics: {
                     totalViews,
                     averagePrice,
@@ -187,6 +232,25 @@ const Dashboard = () => {
                 newSet.delete(listingId);
                 return newSet;
             });
+        }
+    };
+
+    const handleBookingStatusUpdate = async (bookingId, status) => {
+        try {
+            const authConfig = await createAuthenticatedRequest(getToken);
+            await api.patch(
+                `/bookings/${bookingId}/status`,
+                { status },
+                authConfig
+            );
+
+            toast.success(`Booking ${status.toLowerCase()} successfully`);
+
+            // Refresh dashboard data
+            fetchDashboardData();
+        } catch (error) {
+            console.error("Error updating booking status:", error);
+            toast.error("Failed to update booking status");
         }
     };
 
@@ -486,6 +550,112 @@ const Dashboard = () => {
                                                 <Trash2 className="w-4 h-4" />
                                             )}
                                             Delete
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Booking Requests */}
+            <div className="bg-white rounded-lg shadow">
+                <div className="px-6 py-4 border-b flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">Booking Requests</h2>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/bookings")}
+                    >
+                        View All
+                    </Button>
+                </div>
+                <div className="p-6">
+                    {dashboardData.bookingRequests.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 text-lg mb-2">
+                                No pending booking requests
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                                Booking requests will appear here when users
+                                want to rent your items
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {dashboardData.bookingRequests.map((booking) => (
+                                <div
+                                    key={booking.id}
+                                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="font-medium text-lg">
+                                                {booking.listing?.title ||
+                                                    "Unknown Listing"}
+                                            </h3>
+                                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                PENDING
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-600 space-y-1">
+                                            <p>
+                                                Requested by:{" "}
+                                                {booking.user?.firstName ||
+                                                    "Unknown"}{" "}
+                                                {booking.user?.lastName ||
+                                                    "User"}
+                                            </p>
+                                            <p>
+                                                Dates:{" "}
+                                                {new Date(
+                                                    booking.startDate
+                                                ).toLocaleDateString()}{" "}
+                                                -{" "}
+                                                {new Date(
+                                                    booking.endDate
+                                                ).toLocaleDateString()}
+                                            </p>
+                                            <p>
+                                                Total:{" "}
+                                                <span className="font-semibold text-green-600">
+                                                    ${booking.totalCost}
+                                                </span>
+                                            </p>
+                                            {booking.message && (
+                                                <p className="text-gray-500 italic">
+                                                    "{booking.message}"
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                        <Button
+                                            size="sm"
+                                            onClick={() =>
+                                                handleBookingStatusUpdate(
+                                                    booking.id,
+                                                    "CONFIRMED"
+                                                )
+                                            }
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            Accept
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                handleBookingStatusUpdate(
+                                                    booking.id,
+                                                    "CANCELLED"
+                                                )
+                                            }
+                                            className="text-red-600 border-red-200 hover:bg-red-50"
+                                        >
+                                            Decline
                                         </Button>
                                     </div>
                                 </div>

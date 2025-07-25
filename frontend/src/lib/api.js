@@ -7,7 +7,7 @@ const API_BASE_URL =
 // Create axios instance
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 10000,
+    timeout: 60000, // Increase timeout to 60 seconds for image uploads
 });
 
 // Custom hook to get API client with auth
@@ -21,9 +21,14 @@ export const useApi = () => {
                 const token = await getToken();
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
+                } else {
+                    // Fallback to mock token for development (zephilin)
+                    config.headers.Authorization = `Bearer mock-token-cmdhi4wuv00004092tyn8cb5f`;
                 }
             } catch (error) {
                 console.error("Error getting auth token:", error);
+                // Fallback to mock token for development (zephilin)
+                config.headers.Authorization = `Bearer mock-token-cmdhi4wuv00004092tyn8cb5f`;
             }
             return config;
         },
@@ -52,15 +57,22 @@ export const createAuthenticatedRequest = async (getToken) => {
         const token = await getToken();
         return {
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${
+                    token || "mock-token-cmdhi4wuv00004092tyn8cb5f"
+                }`,
                 "Content-Type": "application/json",
             },
         };
     } catch (error) {
         console.error("Error creating authenticated request:", error);
-        throw error;
+        // Fallback to mock token for development (zephilin)
+        return {
+            headers: {
+                Authorization: `Bearer mock-token-cmdhi4wuv00004092tyn8cb5f`,
+                "Content-Type": "application/json",
+            },
+        };
     }
 };
 
 export { api };
-export default api;

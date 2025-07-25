@@ -146,30 +146,81 @@ const CreateListing = () => {
                     "new images..."
                 );
 
-                // Create FormData for image upload
-                const imageFormData = new FormData();
-                imagesToUpload.forEach((image) => {
-                    imageFormData.append("images", image.file);
-                });
+                try {
+                    // Create FormData for image upload
+                    const imageFormData = new FormData();
+                    imagesToUpload.forEach((image, index) => {
+                        console.log(
+                            `Adding image ${index}:`,
+                            image.file.name,
+                            image.file.type
+                        );
+                        imageFormData.append("images", image.file);
+                    });
 
-                // Get authentication headers
-                const authConfig = await createAuthenticatedRequest(getToken);
+                    // Get authentication headers
+                    const authConfig = await createAuthenticatedRequest(
+                        getToken
+                    );
+                    console.log("Auth config for upload:", authConfig);
 
-                // Upload images to Cloudinary
-                const uploadResponse = await api.post(
-                    "/listings/upload-images",
-                    imageFormData,
-                    {
-                        ...authConfig,
-                        headers: {
-                            ...authConfig.headers,
-                            "Content-Type": "multipart/form-data",
-                        },
+                    // Upload images to Cloudinary
+                    const uploadResponse = await api.post(
+                        "/listings/upload-images",
+                        imageFormData,
+                        {
+                            ...authConfig,
+                            headers: {
+                                ...authConfig.headers,
+                                "Content-Type": "multipart/form-data",
+                            },
+                            timeout: 60000, // 60 seconds for image upload
+                        }
+                    );
+
+                    console.log("Image upload response:", uploadResponse.data);
+                    imageUrls = uploadResponse.data.images;
+                } catch (uploadError) {
+                    console.error("Image upload failed:", uploadError);
+                    console.error("Upload error details:", {
+                        message: uploadError.message,
+                        code: uploadError.code,
+                        status: uploadError.response?.status,
+                        data: uploadError.response?.data,
+                    });
+
+                    // Handle specific error cases
+                    if (uploadError.code === "ECONNABORTED") {
+                        toast.error(
+                            "Image upload timed out. Creating listing without images..."
+                        );
+                    } else if (uploadError.response?.status === 413) {
+                        toast.error(
+                            "Images are too large. Creating listing without images..."
+                        );
+                    } else if (uploadError.response?.status === 400) {
+                        toast.error(
+                            "Invalid image format. Creating listing without images..."
+                        );
+                    } else if (
+                        uploadError.response?.data?.code ===
+                        "CLOUDINARY_NOT_CONFIGURED"
+                    ) {
+                        toast.error(
+                            "Image upload not available. Creating listing without images..."
+                        );
+                    } else {
+                        toast.error(
+                            "Image upload failed. Creating listing without images..."
+                        );
                     }
-                );
 
-                console.log("Image upload response:", uploadResponse.data);
-                imageUrls = uploadResponse.data.images;
+                    // Continue with listing creation without images
+                    console.log(
+                        "Continuing with listing creation without uploaded images..."
+                    );
+                    imageUrls = []; // No uploaded images
+                }
             }
 
             // Combine uploaded images with existing ones

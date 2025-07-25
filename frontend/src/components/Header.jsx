@@ -8,6 +8,7 @@ import {
 } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Home, Search, Plus, User, Calendar } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 const Header = () => {
     const { isSignedIn } = useUser();
@@ -65,6 +66,7 @@ const Header = () => {
                                         {item.name}
                                     </Link>
                                 ))}
+                                <NotificationBell />
                                 <UserButton afterSignOutUrl="/" />
                             </>
                         ) : (
@@ -134,7 +136,8 @@ const Header = () => {
                                         </div>
                                     </Link>
                                 ))}
-                                <div className="px-4 py-2">
+                                <div className="px-4 py-2 flex items-center justify-between">
+                                    <NotificationBell />
                                     <UserButton afterSignOutUrl="/" />
                                 </div>
                             </div>

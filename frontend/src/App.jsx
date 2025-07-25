@@ -9,6 +9,7 @@ import EditListing from "./pages/EditListing";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
+import Chat from "./pages/Chat";
 import AdminRoutes from "./pages/AdminRoutes";
 
 function App() {
@@ -69,6 +70,14 @@ function App() {
                                 element={
                                     <SignedIn>
                                         <Bookings />
+                                    </SignedIn>
+                                }
+                            />
+                            <Route
+                                path="/chat/:bookingId"
+                                element={
+                                    <SignedIn>
+                                        <Chat />
                                     </SignedIn>
                                 }
                             />

@@ -209,30 +209,54 @@ const EditListing = () => {
                     "new images..."
                 );
 
-                // Create FormData for image upload
-                const imageFormData = new FormData();
-                imagesToUpload.forEach((image) => {
-                    imageFormData.append("images", image.file);
-                });
+                try {
+                    // Create FormData for image upload
+                    const imageFormData = new FormData();
+                    imagesToUpload.forEach((image) => {
+                        imageFormData.append("images", image.file);
+                    });
 
-                // Get authentication headers
-                const authConfig = await createAuthenticatedRequest(getToken);
+                    // Get authentication headers
+                    const authConfig = await createAuthenticatedRequest(
+                        getToken
+                    );
 
-                // Upload images to Cloudinary
-                const uploadResponse = await api.post(
-                    "/listings/upload-images",
-                    imageFormData,
-                    {
-                        ...authConfig,
-                        headers: {
-                            ...authConfig.headers,
-                            "Content-Type": "multipart/form-data",
-                        },
+                    // Upload images to Cloudinary
+                    const uploadResponse = await api.post(
+                        "/listings/upload-images",
+                        imageFormData,
+                        {
+                            ...authConfig,
+                            headers: {
+                                ...authConfig.headers,
+                                "Content-Type": "multipart/form-data",
+                            },
+                            timeout: 60000, // 60 seconds for image upload
+                        }
+                    );
+
+                    console.log("Image upload response:", uploadResponse.data);
+                    imageUrls = uploadResponse.data.images;
+                } catch (uploadError) {
+                    console.error("Image upload failed:", uploadError);
+
+                    if (uploadError.code === "ECONNABORTED") {
+                        toast.error(
+                            "Image upload timed out. Updating listing without new images..."
+                        );
+                    } else if (uploadError.response?.status === 413) {
+                        toast.error(
+                            "Images are too large. Updating listing without new images..."
+                        );
+                    } else {
+                        toast.error(
+                            "Failed to upload new images. Updating listing without them..."
+                        );
                     }
-                );
 
-                console.log("Image upload response:", uploadResponse.data);
-                imageUrls = uploadResponse.data.images;
+                    // Continue with update without new images
+                    imageUrls = [];
+                }
             }
 
             // Combine uploaded images with existing ones
