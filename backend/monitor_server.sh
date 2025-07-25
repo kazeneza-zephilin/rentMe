@@ -15,7 +15,11 @@ log_message() {
 # Function to check server health
 check_health() {
     response=$(curl -s -w "%{http_code}" -o /dev/null --max-time 10 "$HEALTH_URL")
-    return $response
+    if [ "$response" = "200" ]; then
+        return 0  # Success
+    else
+        return 1  # Failure
+    fi
 }
 
 # Function to check if server process is running
@@ -54,16 +58,8 @@ monitor_server() {
     
     # Check health endpoint
     if check_health; then
-        case $? in
-            200)
-                log_message "✅ Server is healthy (HTTP 200)"
-                return 0
-                ;;
-            *)
-                log_message "⚠️ Server responded with HTTP $? - may be having issues"
-                return 1
-                ;;
-        esac
+        log_message "✅ Server is healthy (HTTP 200)"
+        return 0
     else
         log_message "🚨 Server health check failed - server may be crashed or unresponsive"
         return 1

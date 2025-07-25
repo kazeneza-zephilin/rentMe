@@ -23,11 +23,24 @@ const { router: notificationRoutes } = require("./routes/notifications");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Health check endpoint (before rate limiting for monitoring)
+app.get("/health", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+    });
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: process.env.NODE_ENV === "production" ? 100 : 1000, // Higher limit in development
     message: "Too many requests from this IP, please try again later.",
+    skip: (req) => {
+        // Skip rate limiting for health check endpoint
+        return req.path === "/health";
+    },
 });
 
 // Middleware
@@ -61,15 +74,6 @@ app.use((req, res, next) => {
     });
 
     next();
-});
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.status(200).json({
-        status: "OK",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-    });
 });
 
 // API Routes
