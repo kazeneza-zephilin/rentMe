@@ -9,8 +9,10 @@ const prisma = new PrismaClient();
 
 // Admin credentials (in production, store these securely in environment variables)
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@rentme.com";
+// Use a static hash to avoid regenerating on each server restart
 const ADMIN_PASSWORD_HASH =
-    process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync("admin123", 10);
+    process.env.ADMIN_PASSWORD_HASH ||
+    "$2b$10$bKmnaocvzjvDDGJsjXZmBOU7FiVG4H0UMOjkMIeRbktMZBQO2tRZe"; // admin123
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-here";
 
 // Admin authentication middleware

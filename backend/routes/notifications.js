@@ -96,9 +96,7 @@ const createNotification = async (
     relatedId = null
 ) => {
     try {
-        // Ensure we have a fresh prisma instance
-        const prismaClient = new PrismaClient();
-        const notification = await prismaClient.notification.create({
+        const notification = await prisma.notification.create({
             data: {
                 userId,
                 type,
@@ -107,7 +105,6 @@ const createNotification = async (
                 relatedId,
             },
         });
-        await prismaClient.$disconnect();
         return notification;
     } catch (error) {
         console.error("Error creating notification:", error);
