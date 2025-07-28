@@ -139,10 +139,13 @@ const Dashboard = () => {
                         (response) => response.data.bookings || []
                     );
 
-                    // Filter pending requests
-                    bookingRequests = allBookings
-                        .filter((booking) => booking.status === "PENDING")
-                        .slice(0, 5); // Show latest 5 requests
+                    // Sort all bookings by createdAt descending (latest first)
+                    const sortedBookings = allBookings.sort(
+                        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    );
+
+                    // Show latest 5 bookings regardless of status
+                    bookingRequests = sortedBookings.slice(0, 5);
 
                     // Calculate active bookings and earnings
                     actualActiveBookings = allBookings.filter(
@@ -596,9 +599,27 @@ const Dashboard = () => {
                                                 {booking.listing?.title ||
                                                     "Unknown Listing"}
                                             </h3>
-                                            <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                                                PENDING
-                                            </span>
+                                            {/* Status badge for booking */}
+                                            {booking.status === "PENDING" && (
+                                                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                    PENDING
+                                                </span>
+                                            )}
+                                            {booking.status === "CONFIRMED" && (
+                                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                    CONFIRMED
+                                                </span>
+                                            )}
+                                            {booking.status === "COMPLETED" && (
+                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                    COMPLETED
+                                                </span>
+                                            )}
+                                            {booking.status === "CANCELLED" && (
+                                                <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                    CANCELLED
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="text-sm text-gray-600 space-y-1">
                                             <p>
@@ -631,33 +652,36 @@ const Dashboard = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 ml-4">
-                                        <Button
-                                            size="sm"
-                                            onClick={() =>
-                                                handleBookingStatusUpdate(
-                                                    booking.id,
-                                                    "CONFIRMED"
-                                                )
-                                            }
-                                            className="bg-green-600 hover:bg-green-700"
-                                        >
-                                            Accept
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                                handleBookingStatusUpdate(
-                                                    booking.id,
-                                                    "CANCELLED"
-                                                )
-                                            }
-                                            className="text-red-600 border-red-200 hover:bg-red-50"
-                                        >
-                                            Decline
-                                        </Button>
-                                    </div>
+                                    {/* Only show action buttons if booking is PENDING */}
+                                    {booking.status === "PENDING" && (
+                                        <div className="flex gap-2 ml-4">
+                                            <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleBookingStatusUpdate(
+                                                        booking.id,
+                                                        "CONFIRMED"
+                                                    )
+                                                }
+                                                className="bg-green-600 hover:bg-green-700"
+                                            >
+                                                Accept
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    handleBookingStatusUpdate(
+                                                        booking.id,
+                                                        "CANCELLED"
+                                                    )
+                                                }
+                                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                            >
+                                                Decline
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

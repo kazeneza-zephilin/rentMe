@@ -112,12 +112,14 @@ router.get("/:chatId", requireAuth, async (req, res) => {
                 },
                 messages: {
                     orderBy: { createdAt: "asc" },
-                    select: {
-                        id: true,
-                        content: true,
-                        sender: true,
-                        userId: true,
-                        createdAt: true,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
                     },
                 },
             },
@@ -146,29 +148,6 @@ router.get("/:chatId", requireAuth, async (req, res) => {
                 .status(404)
                 .json({ error: "Chat not found or access denied" });
         }
-
-        // Fetch user data for messages separately
-        const userIds = [...new Set(chat.messages.map((msg) => msg.userId))];
-        const users = await prisma.user.findMany({
-            where: { id: { in: userIds } },
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-            },
-        });
-
-        // Create a user lookup map
-        const userMap = users.reduce((map, user) => {
-            map[user.id] = user;
-            return map;
-        }, {});
-
-        // Add user data to messages
-        chat.messages = chat.messages.map((message) => ({
-            ...message,
-            user: userMap[message.userId] || null,
-        }));
 
         res.json({ chat });
     } catch (error) {

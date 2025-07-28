@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
 import { useApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,21 +6,13 @@ import { Button } from "@/components/ui/button";
 import MessageThread from "@/components/MessageThread";
 import AirbnbBookingForm from "@/components/AirbnbBookingForm";
 import { useAuth } from "@clerk/clerk-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const ListingDetail = () => {
     const { id } = useParams();
-    const [searchParams] = useSearchParams();
     const api = useApi();
     const { isSignedIn, userId } = useAuth();
     const [showBookingForm, setShowBookingForm] = useState(false);
-
-    // Check if booking should be auto-opened from chat
-    useEffect(() => {
-        if (searchParams.get("book") === "true") {
-            setShowBookingForm(true);
-        }
-    }, [searchParams]);
 
     const {
         data: listing,
